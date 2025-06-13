@@ -1,7 +1,9 @@
 streamlit==1.31.1
-torch==2.2.0
-transformers==4.37.2
 Pillow==10.2.0
-numpy==1.26.3
-opencv-python==4.9.0.80
-python-dotenv==1.0.1 
+python-dotenv==1.0.1
+requests==2.31.0
+beautifulsoup4==4.12.3
+cloudscraper==1.2.71
+google-generativeai==0.3.2
+anthropic==0.18.1
+toml==0.10.2
