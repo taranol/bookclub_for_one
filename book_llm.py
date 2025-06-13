@@ -9,7 +9,7 @@ import json
 import random
 import toml
 from dotenv import load_dotenv
-from prompts import prompt_books, prompt_reader_info, prompt_recommendation, prompt_book_description
+# from prompts import prompt_books, prompt_reader_info, prompt_recommendation, prompt_book_description
 
 # Load environment variables from .env file
 load_dotenv()
