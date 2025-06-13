@@ -1,3 +1,4 @@
+import streamlit as st
 import base64
 import os
 from google import genai
@@ -6,88 +7,141 @@ from io import BytesIO
 import anthropic
 import json
 import random
-from prompts import prompt_books, prompt_reader_info, prompt_recommendation
+import toml
+from dotenv import load_dotenv
+from prompts import prompt_books, prompt_reader_info, prompt_recommendation, prompt_book_description
 
-def extract_books_and_authors(file, prompt=prompt_books):
-    client=genai.Client(
-            api_key=os.environ.get("GOOGLE_API_KEY"),
-        )
-    # file = client.files.upload(file='/Users/Olga/CS_projects/bookclub_for_one/assets/IMG_9D13EB33-A45D-483E-BCCF-D0CDF6143877.JPEG')
-    response = client.models.generate_content(
-        model="learnlm-2.0-flash-experimental",
-        contents=[prompt, file]
-    )
-    return response.text
+# Load environment variables from .env file
+load_dotenv()
 
-def infer_sociotype(books, prompt_reader_info=prompt_reader_info):
-    """
-    Infer sociotype, age range and topics based on book preferences using Claude.
+# Try to get API keys from Streamlit secrets first, then fall back to .env
+try:
+    GOOGLE_API_KEY = st.secrets["api_keys"]["google_api_key"]
+    ANTHROPIC_API_KEY = st.secrets["api_keys"]["anthropic_api_key"]
     
-    Args:
-        books (list): List of book data dictionaries containing title, dewey, description, and vibe
-        
-    Returns:
-        dict: Dictionary containing:
-            - sociotype: str, the inferred sociotype (e.g., "IEI", "LII", etc.)
-            - age_range: str, the inferred age range
-            - topics: list, main topics of interest
-            - genres: list, main book genres
-            - subgenres: list, main book subgenres
-            - vibe: list, main vibe of the books
-    """
-    client = anthropic.Anthropic(api_key=os.environ.get("ANTHROPIC_API_KEY"))
-    message = client.messages.create(
-        model="claude-3-5-sonnet-20241022",
-        max_tokens=1000,
-        temperature=0.7,
-        system=prompt_reader_info,
-        messages=[
-            {"role": "user", "content": f"Based on these books:\n{books}"}
-        ]
-    )
+except Exception as e:
+    st.warning("Could not load secrets from .streamlit/secrets.toml, falling back to .env file")
+    # Fall back to environment variables
+    # GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
+    # ANTHROPIC_API_KEY = os.getenv("ANTHROPIC_API_KEY")
+    
+    # # Fall back to default prompts if not in secrets
+    # PROMPT_BOOKS = prompt_books
+    
+    # PROMPT_READER_INFO = prompt_reader_info
+    
+    # PROMPT_RECOMMENDATION =prompt_recommendation
+    # PROMPT_BOOK_DESCRIPTION = prompt_book_description
 
-    # Parse the response into a dictionary
+PROMPT_BOOKS = st.secrets["prompts"]["prompt_books"]
+PROMPT_READER_INFO = st.secrets["prompts"]["prompt_reader_info"]
+PROMPT_RECOMMENDATION = st.secrets["prompts"]["prompt_recommendation"]
+PROMPT_BOOK_DESCRIPTION = st.secrets["prompts"]["prompt_book_description"]#
+
+#  Verify API keys are available
+if not GOOGLE_API_KEY or not ANTHROPIC_API_KEY:
+    st.error("""
+    API keys not found. Please either:
+    1. Add your API keys to .streamlit/secrets.toml, or
+    2. Set them in your .env file as:
+       GOOGLE_API_KEY=your-key-here
+       ANTHROPIC_API_KEY=your-key-here
+    """)
+    st.stop()
+
+def extract_books_and_authors(file, prompt=PROMPT_BOOKS):
     try:
-        response_text = message.content[0].text
-        # Find the dictionary part of the response
-        dict_start = response_text.find('{')
-        dict_end = response_text.rfind('}') + 1
-        if dict_start >= 0 and dict_end > dict_start:
-            dict_str = response_text[dict_start:dict_end]
-            reader_dict = dict_str
-        else:
-            # Fallback if parsing fails
-            reader_dict = {
-                "sociotype": "Unknown",
-                "age_range": "Unknown",
-                "topics": ["Unknown"],
-                "genres": ["Unknown"], 
-                "subgenres": ["Unknown"],
-                "vibe": ["Unknown"]
-            }
+        client = genai.Client(api_key=GOOGLE_API_KEY)
+        response = client.models.generate_content(
+            model="learnlm-2.0-flash-experimental",
+            contents=[prompt, file]
+        )
+        return response.text
     except Exception as e:
-        print(f"Error parsing response: {e}")
-        reader_dict = {
-            "sociotype": "Unknown",
-            "age_range": "Unknown",
-            "topics": ["Unknown"],
-            "genres": ["Unknown"],
-            "subgenres": ["Unknown"],
-            "vibe": ["Unknown"]
-        }
+        st.error(f"Error with Google API: {str(e)}")
+        st.error("Please check your Google API key")
+        return None
 
-    return reader_dict
+def infer_sociotype(books, prompt_reader_info=PROMPT_READER_INFO):
+    try:
+        client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
+        message = client.messages.create(
+            model="claude-3-5-haiku-20241022",
+            max_tokens=1000,
+            temperature=0.5,
+            system=prompt_reader_info,
+            messages=[
+                {"role": "user", "content": f"Based on these books:\n{books}"}
+            ]
+        )
+        # Parse the response into a dictionary
+        try:
+            response_text = message.content[0].text
+            # Find the dictionary part of the response
+        except Exception as e:
+            print(f"Error parsing response: {e}")
+        
+        return response_text
+    except Exception as e:
+        st.error(f"Error with Anthropic API: {str(e)}")
+        st.error("Please check your Anthropic API key")
+        return None
 
+def get_recommendations(reader_info, book_list, prompt_recommendation=PROMPT_RECOMMENDATION):
+    try:
+        formatted_prompt = prompt_recommendation.format(
+            book_list=book_list, 
+            reader_info=reader_info
+        )
+        client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
+        message = client.messages.create(
+            model="claude-sonnet-4-0",
+            max_tokens=2000,
+            temperature=0.9,
+            system=formatted_prompt,
+            messages=[
+                {"role": "user", "content": f"Based on these books:\n{book_list}"}
+            ]
+        )
+        try:
+            response_text = message.content[0].text
+            # Find the dictionary part of the response
+            dict_start = response_text.find('{')
+            dict_end = response_text.rfind('}') + 1
+            if dict_start >= 0 and dict_end > dict_start:
+                dict_str = response_text[dict_start:dict_end]
+                recommendations_dict = dict_str
+            else:
+                # Fallback if parsing fails
+                recommendations_dict = {
+                    "about you": "Unknown",
+                    "recommendations": "Unknown",
+                    
+                }
+        except Exception as e:
+            print(f"Error parsing response: {e}")
+            recommendations_dict = {
+                "about you": "Unknown",
+                "recommendations": "Unknown",
+                
+            }
 
-def get_recommendations(reader_info, book_list, prompt_recommendation=prompt_recommendation):
-    formatted_prompt=prompt_recommendation.format(
-        book_list=book_list, 
-        reader_info=reader_info)
-    client = anthropic.Anthropic(api_key=os.environ.get("ANTHROPIC_API_KEY"))
+        return recommendations_dict
+    except Exception as e:
+        st.error(f"Error with Anthropic API: {str(e)}")
+        st.error("Please check your Anthropic API key")
+        return None
+
+def get_book_description(book_list, prompt_book_description=PROMPT_BOOK_DESCRIPTION):
+    formatted_prompt = prompt_book_description.format(
+        book_list=book_list
+    )
+    client = anthropic.Anthropic(api_key=ANTHROPIC_API_KEY)
+    
     message = client.messages.create(
-        model="claude-sonnet-4-0",
-        max_tokens=2000,
-        temperature=0.8,
+        model="claude-3-5-haiku-20241022",
+        max_tokens=1000,
+        temperature=0.9,
         system=formatted_prompt,
         messages=[
             {"role": "user", "content": f"Based on these books:\n{book_list}"}
@@ -95,28 +149,13 @@ def get_recommendations(reader_info, book_list, prompt_recommendation=prompt_rec
     )
     try:
         response_text = message.content[0].text
-        # Find the dictionary part of the response
-        dict_start = response_text.find('{')
-        dict_end = response_text.rfind('}') + 1
-        if dict_start >= 0 and dict_end > dict_start:
-            dict_str = response_text[dict_start:dict_end]
-            recommendations_dict = dict_str
-        else:
-            # Fallback if parsing fails
-            recommendations_dict = {
-                "about you": "Unknown",
-                "recommendations": "Unknown",
-                "music": ["Unknown"]
-            }
+        
+        return response_text
+      
     except Exception as e:
         print(f"Error parsing response: {e}")
-        recommendations_dict = {
-            "about you": "Unknown",
-            "recommendations": "Unknown",
-            "music": ["Unknown"]
-        }
-
-    return recommendations_dict
+        return "[]"
+        
     
 
 

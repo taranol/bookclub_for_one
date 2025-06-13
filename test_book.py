@@ -39,8 +39,9 @@ def get_book_metadata(book_list):
                 book_info = response['items'][0]['volumeInfo']
                 title = book_info.get('title', None)
                 author = book_info.get('authors', None)
-                cover = book_info.get('imageLinks', {}).get('thumbnail', None)
+                # cover = book_info.get('imageLinks', {})
                 # description = book_info.get('description', None)
+                cover = next((img for k in ['large','medium','small','thumbnail','smallThumbnail'] if (img := book_info.get('imageLinks', {}).get(k))), None)
                 isbn = next((id['identifier'] for id in book_info.get('industryIdentifiers', []) if id['type'] == 'ISBN_13'), None)
                 
                 isbn13s.append(isbn)
@@ -240,7 +241,7 @@ def display_books(book_list):
                 with cols[j]:
                     try:
                         if books_metadata[i+j]['cover']:
-                            st.image(books_metadata[i+j]['cover'], use_container_width=True)
+                            st.image(books_metadata[i+j]['cover'],  use_container_width=True)
                         else:
                             # Create and display thumbnail when no cover is available
                             thumbnail = create_book_thumbnail(
@@ -252,6 +253,8 @@ def display_books(book_list):
                         # st.write(item)
                         if len(item)==13:
                             display_bookshop_widget(item)
+                        else:
+                            display_bookshop_widget_search()
                         
                             
                     except:
