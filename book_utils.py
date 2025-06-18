@@ -1,11 +1,27 @@
+
 import os
 import tempfile
-os.environ['ISBNTOOLS_LOG_LEVEL'] = 'OFF'
+import logging
 
+# Set up logging configuration before any other imports
+os.environ['ISBNTOOLS_LOG_LEVEL'] = 'CRITICAL'
+temp_dir = tempfile.gettempdir()
+os.environ['ISBNTOOLS_LOG_FILE'] = os.path.join(temp_dir, 'isbntools.log')
+
+# Override logging to prevent file creation in restricted directories
+def safe_log_config(*args, **kwargs):
+    if 'filename' in kwargs and ('/home/adminuser/venv' in str(kwargs['filename']) or 'isbntools' in str(kwargs['filename'])):
+        kwargs.pop('filename', None)
+    return logging._original_basicConfig(*args, **kwargs)
+
+# Store original and replace
+if not hasattr(logging, '_original_basicConfig'):
+    logging._original_basicConfig = logging.basicConfig
+    logging.basicConfig = safe_log_config
 
 import streamlit as st
 import requests
-# from isbntools.app import isbn_from_words
+from isbntools.app import isbn_from_words
 from streamlit.components.v1 import html
 from bs4 import BeautifulSoup
 import cloudscraper
@@ -16,9 +32,6 @@ import io
 scraper = cloudscraper.create_scraper()  # Handles Cloudflare
 
 def get_isbn(title, author):
-    import os
-    import tempfile
-    os.environ['ISBNTOOLS_LOG_LEVEL'] = 'CRITICAL'
     query=f"{title} by {author}"
     isbn=isbn_from_words(query)
     if len(isbn)==13:
@@ -43,7 +56,6 @@ def get_cover_by_isbn(isbn):
         image_links.get('smallThumbnail') )
         
 
-
 def book_in_shop(isbn):       
     url = f"https://bookshop.org/a/114086/{isbn}"
     response = scraper.get(url)
@@ -54,8 +66,8 @@ def book_in_shop(isbn):
         return False
     
 
-
 def display_bookshop_widget(isbn, max_width="50%", scale=0.8):
+    st.write(f"🔍 DEBUG: Trying to display widget for ISBN: {isbn}")
     html_code = f"""
     <div style="
         width: 100%;
@@ -79,9 +91,11 @@ def display_bookshop_widget(isbn, max_width="50%", scale=0.8):
     </div>
     """
     st.components.v1.html(html_code, height=500)
+    st.write("✅ Widget HTML generated")
 
-def display_bookshop_widget_search( scale=0.5):
+def display_bookshop_widget_search(scale=0.5):
     """Display Bookshop.org widget for a given ISBN."""
+    st.write("🔍 DEBUG: Displaying search widget")
     html_code = f"""
                 <div style="
                     width: 100%;
@@ -96,7 +110,7 @@ def display_bookshop_widget_search( scale=0.5):
                         width: fit-content;
                     ">
                  <script 
-                    src=https://bookshop.org/widgets.js 
+                    src="https://bookshop.org/widgets.js" 
                     data-type="search" 
                     data-include-branding="false" 
                     data-affiliate-id="114086">
@@ -105,9 +119,8 @@ def display_bookshop_widget_search( scale=0.5):
                 </div>
                 """
     
-    
-    
     st.components.v1.html(html_code, height=50)
+    st.write("✅ Search widget HTML generated")
 
 def create_book_thumbnail(title, author):
     """Create a thumbnail image with book title and author when no cover is available."""
@@ -179,61 +192,47 @@ def create_book_thumbnail(title, author):
         
 
 def display_books(book_list):
-     
-    # st.text(books_metadata) 
-    # st.text(len(books_metadata))           
+    st.write(f"🔍 DEBUG: Processing {len(book_list)} books")
+    
     for i in range(0, min(len(book_list), 8), 4):
         cols = st.columns(4)       # Display up to 4 books in this row
         for j in range(4):
             if i + j < len(book_list):
                 with cols[j]:
                     try:
-                        title=book_list[i+j]['title']
-                        author=book_list[i+j]['author']
-                        isbn=get_isbn(title, author)
-                        cover=get_cover_by_isbn(isbn)
+                        title = book_list[i+j]['title']
+                        author = book_list[i+j]['author']
+                        st.write(f"📖 **{title}** by {author}")
                         
+                        isbn = get_isbn(title, author)
+                        st.write(f"📚 ISBN: {isbn}")
                         
-                        
-                        if book_in_shop(isbn):
-                            display_bookshop_widget(isbn)# st.write(item)
-                        elif cover is not None: 
+                        if isbn:
+                            cover = get_cover_by_isbn(isbn)
+                            st.write(f"🖼️ Cover found: {cover is not None}")
                             
+                            in_shop = book_in_shop(isbn)
+                            st.write(f"🛒 In bookshop: {in_shop}")
+                            
+                            if in_shop:
+                                display_bookshop_widget(isbn)
+                            elif cover is not None: 
                                 st.image(cover, use_container_width=True)
                                 display_bookshop_widget_search()
-                        
-                        else: 
+                            else: 
+                                thumbnail = create_book_thumbnail(title, author)
+                                st.image(thumbnail, use_container_width=True)
+                                display_bookshop_widget_search()
+                        else:
+                            st.write("❌ No ISBN found")
                             thumbnail = create_book_thumbnail(title, author)
-                            st.image(thumbnail, use_container_width=True)#
+                            st.image(thumbnail, use_container_width=True)
                             display_bookshop_widget_search()
                         
+                        st.write("---")  # Separator between books
                         
                     except Exception as e:
-                        print(f"Error getting cover: {str(e)}")
-                        
-                        
-                        
-            
+                        st.error(f"Error processing book: {str(e)}")
+                        st.write(f"Book data: {book_list[i+j]}")
 
-
-# books=['The Rings of Saturn (W.G. Sebald)', 'The Book of Disquiet (Fernando Pessoa)', 'Stoner (John Williams)', 'The Passion According to G.H. (Clarice Lispector)', 'The Man Without Qualities (Robert Musil)', 'Dept. of Speculation (Jenny Offill)', 'The Waves (Virginia Woolf)', 'Austerlitz (W.G. Sebald)', 'The Notebooks of Malte Laurids Brigge (Rainer Maria Rilke)', 'My Struggle: Book 1 (Karl Ove Knausgård)']
-# # books= [line.strip() for line in books.splitlines() if line.strip()]
-
-# # Create an editable text area for books
-# edited_books = st.text_area("Paste your book list here", height=200)
-
-# if st.button("Get Books"):
-#     import ast
-#     book_list = ast.literal_eval(edited_books)
-#     display_books(book_list)
-    
-# display_books(books)
 __all__ = ['display_books']
-
-
-
-
-
-
-
-
