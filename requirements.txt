@@ -4,7 +4,7 @@ python-dotenv==1.1.0
 requests==2.32.3 
 beautifulsoup4==4.13.4
 cloudscraper==1.2.71
-google-genai=1.16.1
+google-genai==1.16.1
 anthropic==0.18.1
 isbnlib==3.10.14
 rapidfuzz==3.13.0
