@@ -5,7 +5,7 @@ os.environ['ISBNTOOLS_LOG_LEVEL'] = 'OFF'
 
 import streamlit as st
 import requests
-from isbntools.app import isbn_from_words
+# from isbntools.app import isbn_from_words
 from streamlit.components.v1 import html
 from bs4 import BeautifulSoup
 import cloudscraper
@@ -16,7 +16,9 @@ import io
 scraper = cloudscraper.create_scraper()  # Handles Cloudflare
 
 def get_isbn(title, author):
-
+    import os
+    import tempfile
+    os.environ['ISBNTOOLS_LOG_LEVEL'] = 'CRITICAL'
     query=f"{title} by {author}"
     isbn=isbn_from_words(query)
     if len(isbn)==13:
