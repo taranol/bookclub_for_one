@@ -1,3 +1,8 @@
+
+import os
+import tempfile
+os.environ['ISBNTOOLS_LOG_LEVEL'] = 'OFF'
+
 import streamlit as st
 from PIL import Image
 from llm_google import extract_books_and_authors, get_reader_info_genai, get_recommendations_genai
@@ -16,7 +21,8 @@ import random
 
 # os.environ['ISBNTOOLS_LOG_LEVEL'] = 'CRITICAL'
 # or completely disable logging
-os.environ['ISBNTOOLS_LOG_LEVEL'] = 'OFF'
+
+
 
 PROMPT_BOOKS = st.secrets["prompts"]["prompt_books"]
 PROMPT_READER_INFO = st.secrets["prompts"]["prompt_reader_info"]
