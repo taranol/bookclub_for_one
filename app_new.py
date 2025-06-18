@@ -14,6 +14,10 @@ import streamlit.components.v1 as components
 import random
 
 
+os.environ['ISBNTOOLS_LOG_LEVEL'] = 'CRITICAL'
+# or completely disable logging
+os.environ['ISBNTOOLS_LOG_LEVEL'] = 'OFF'
+
 PROMPT_BOOKS = st.secrets["prompts"]["prompt_books"]
 PROMPT_READER_INFO = st.secrets["prompts"]["prompt_reader_info"]
 PROMPT_RECOMMENDATION = st.secrets["prompts"]["prompt_recommendation"]
