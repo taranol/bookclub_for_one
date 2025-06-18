@@ -5,7 +5,6 @@ requests==2.32.3
 beautifulsoup4==4.13.4
 cloudscraper==1.2.71
 google-genai==1.16.1
+isbntools==4.3.29
 anthropic==0.18.1
-isbnlib==3.10.14
-rapidfuzz==3.13.0
 toml==0.10.2
