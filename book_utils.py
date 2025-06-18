@@ -47,13 +47,9 @@ def get_cover_by_isbn(isbn):
         return None
 
     image_links = data['items'][0]['volumeInfo'].get('imageLinks', {})
-
+    cover = image_links.get('thumbnail') 
     # Try to get medium, fall back to larger or smaller
-    return (
-        image_links.get('medium') or
-        image_links.get('large') or
-        image_links.get('thumbnail') or
-        image_links.get('smallThumbnail') )
+    return cover
         
 
 def book_in_shop(isbn):       
@@ -67,7 +63,7 @@ def book_in_shop(isbn):
     
 
 def display_bookshop_widget(isbn, max_width="50%", scale=0.8):
-    st.write(f"🔍 DEBUG: Trying to display widget for ISBN: {isbn}")
+    # st.write(f"🔍 DEBUG: Trying to display widget for ISBN: {isbn}")
     html_code = f"""
     <div style="
         width: 100%;
@@ -95,7 +91,7 @@ def display_bookshop_widget(isbn, max_width="50%", scale=0.8):
 
 def display_bookshop_widget_search(scale=0.5):
     """Display Bookshop.org widget for a given ISBN."""
-    st.write("🔍 DEBUG: Displaying search widget")
+    # st.write("🔍 DEBUG: Displaying search widget")
     html_code = f"""
                 <div style="
                     width: 100%;
@@ -192,7 +188,7 @@ def create_book_thumbnail(title, author):
         
 
 def display_books(book_list):
-    st.write(f"🔍 DEBUG: Processing {len(book_list)} books")
+    # st.write(f"🔍 DEBUG: Processing {len(book_list)} books")
     
     for i in range(0, min(len(book_list), 8), 4):
         cols = st.columns(4)       # Display up to 4 books in this row
