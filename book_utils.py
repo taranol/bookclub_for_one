@@ -43,7 +43,7 @@ def get_cover_by_isbn(isbn):
     response = requests.get(url)
     data = response.json()
 
-    if 'items' not in data:
+    if 'items' not in data or not data['items']:
         return None
 
     image_links = data['items'][0]['volumeInfo'].get('imageLinks', {})
@@ -125,8 +125,8 @@ def display_bookshop_widget_search(scale=0.5):
 def create_book_thumbnail(title, author):
     """Create a thumbnail image with book title and author when no cover is available."""
     # Create a blank image with a light gray background
-    width = 300
-    height = 450
+    width = 200
+    height = 300
     background_color = (240, 240, 240)  # Light gray
     image = Image.new('RGB', (width, height), background_color)
     draw = ImageDraw.Draw(image)
