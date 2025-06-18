@@ -87,7 +87,7 @@ def display_bookshop_widget(isbn, max_width="50%", scale=0.8):
     </div>
     """
     st.components.v1.html(html_code, height=500)
-    st.write("✅ Widget HTML generated")
+    # st.write("✅ Widget HTML generated")
 
 def display_bookshop_widget_search(scale=0.5):
     """Display Bookshop.org widget for a given ISBN."""
@@ -116,7 +116,7 @@ def display_bookshop_widget_search(scale=0.5):
                 """
     
     st.components.v1.html(html_code, height=50)
-    st.write("✅ Search widget HTML generated")
+    # st.write("✅ Search widget HTML generated")
 
 def create_book_thumbnail(title, author):
     """Create a thumbnail image with book title and author when no cover is available."""
@@ -201,14 +201,14 @@ def display_books(book_list):
                         st.write(f"📖 **{title}** by {author}")
                         
                         isbn = get_isbn(title, author)
-                        st.write(f"📚 ISBN: {isbn}")
+                        # st.write(f"📚 ISBN: {isbn}")
                         
                         if isbn:
                             cover = get_cover_by_isbn(isbn)
-                            st.write(f"🖼️ Cover found: {cover is not None}")
+                            # st.write(f"🖼️ Cover found: {cover is not None}")
                             
                             in_shop = book_in_shop(isbn)
-                            st.write(f"🛒 In bookshop: {in_shop}")
+                            # st.write(f"🛒 In bookshop: {in_shop}")
                             
                             if in_shop:
                                 display_bookshop_widget(isbn)
@@ -220,7 +220,7 @@ def display_books(book_list):
                                 st.image(thumbnail, use_container_width=True)
                                 display_bookshop_widget_search()
                         else:
-                            st.write("❌ No ISBN found")
+                            # st.write("❌ No ISBN found")
                             thumbnail = create_book_thumbnail(title, author)
                             st.image(thumbnail, use_container_width=True)
                             display_bookshop_widget_search()
