@@ -1,7 +1,5 @@
 
-import os
-import tempfile
-os.environ['ISBNTOOLS_LOG_LEVEL'] = 'OFF'
+
 
 import streamlit as st
 from PIL import Image
