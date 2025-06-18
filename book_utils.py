@@ -1,3 +1,8 @@
+import os
+import tempfile
+os.environ['ISBNTOOLS_LOG_LEVEL'] = 'OFF'
+
+
 import streamlit as st
 import requests
 from isbntools.app import isbn_from_words
