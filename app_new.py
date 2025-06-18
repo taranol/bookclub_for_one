@@ -14,7 +14,7 @@ import streamlit.components.v1 as components
 import random
 
 
-os.environ['ISBNTOOLS_LOG_LEVEL'] = 'CRITICAL'
+# os.environ['ISBNTOOLS_LOG_LEVEL'] = 'CRITICAL'
 # or completely disable logging
 os.environ['ISBNTOOLS_LOG_LEVEL'] = 'OFF'
 
