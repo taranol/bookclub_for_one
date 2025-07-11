@@ -201,14 +201,14 @@ def display_books(book_list):
                         st.write(f"📖 **{title}** by {author}")
                         
                         isbn = get_isbn(title, author)
-                        # st.write(f"📚 ISBN: {isbn}")
+                        st.write(f"📚 ISBN: {isbn}")
                         
                         if isbn:
                             cover = get_cover_by_isbn(isbn)
                             # st.write(f"🖼️ Cover found: {cover is not None}")
                             
                             in_shop = book_in_shop(isbn)
-                            # st.write(f"🛒 In bookshop: {in_shop}")
+                            st.write(f"🛒 In bookshop: {in_shop}")
                             
                             if in_shop:
                                 display_bookshop_widget(isbn)
