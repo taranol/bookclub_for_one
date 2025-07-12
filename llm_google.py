@@ -93,7 +93,7 @@ def get_reader_info_genai(book_list, prompt=PROMPT_READER_INFO,  socionic_types=
     try:
         
         response = client.models.generate_content(
-            model="gemini-2.5-pro",
+            model="gemini-2.5-flash",
             contents=[prompt, book_list, socionic_types],
             config=types.GenerateContentConfig(
                 response_mime_type="application/json",
@@ -112,7 +112,7 @@ def get_reader_info_genai(book_list, prompt=PROMPT_READER_INFO,  socionic_types=
 def get_recommendations_genai( book_list, reader_info, prompt=PROMPT_RECOMMENDATION, socionic_types=SOCIONIC_TYPES ):
     try:
         response = client.models.generate_content(
-            model="gemini-2.5-pro",
+            model="gemini-2.5-flash",
             contents=[prompt, book_list, reader_info, socionic_types], 
             
             config=types.GenerateContentConfig(
